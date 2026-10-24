@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>테스트 앱</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <!-- 아이폰용 설정 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="테스트 앱">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body { font-family: -apple-system, "Malgun Gothic", sans-serif; margin: 0; padding: 24px;
+           padding-top: max(24px, env(safe-area-inset-top)); background: #f1f5f9; color: #0f172a; }
+    h1 { font-size: 24px; }
+    .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .ok { color: #16a34a; font-weight: bold; }
+    .no { color: #dc2626; font-weight: bold; }
+    button { font-size: 18px; padding: 12px 20px; border: 0; border-radius: 10px;
+             background: #2563eb; color: #fff; }
+    .count { font-size: 40px; font-weight: bold; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>테스트 앱 v1</h1>
+
+  <div class="card">
+    <div>앱 모드(홈 화면 실행): <span id="standalone"></span></div>
+    <div>서비스 워커(오프라인): <span id="sw"></span></div>
+    <div>인터넷 연결: <span id="online"></span></div>
+  </div>
+
+  <div class="card">
+    <div>버튼 누른 횟수 (앱을 껐다 켜도 유지)</div>
+    <div class="count" id="count">0</div>
+    <button id="btn">+1</button>
+    <button id="reset" style="background:#64748b">초기화</button>
+  </div>
+
+  <script>
+    const mark = (id, ok, yes, no) => {
+      const el = document.getElementById(id);
+      el.textContent = ok ? yes : no;
+      el.className = ok ? 'ok' : 'no';
+    };
+
+    // 1. 홈 화면 앱으로 실행 중인지
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    mark('standalone', standalone, '예', '아니오 (브라우저에서 실행 중)');
+
+    // 2. 인터넷 연결 상태
+    const updateOnline = () => mark('online', navigator.onLine, '연결됨', '오프라인');
+    updateOnline();
+    addEventListener('online', updateOnline);
+    addEventListener('offline', updateOnline);
+
+    // 3. 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => mark('sw', true, '작동 중', ''))
+        .catch(() => mark('sw', false, '', '실패 (HTTPS 필요)'));
+    } else {
+      mark('sw', false, '', '지원 안 됨');
+    }
+
+    // 4. 데이터 저장 테스트
+    const countEl = document.getElementById('count');
+    let count = Number(localStorage.getItem('count') || 0);
+    countEl.textContent = count;
+    document.getElementById('btn').onclick = () => {
+      count++; localStorage.setItem('count', count); countEl.textContent = count;
+    };
+    document.getElementById('reset').onclick = () => {
+      count = 0; localStorage.setItem('count', 0); countEl.textContent = 0;
+    };
+  </script>
+</body>
+</html>
